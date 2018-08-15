@@ -1,0 +1,17 @@
+--https://www.doag.org/formes/pubfiles/302968/2008-K-DB-Kaftan-Upgrade_auf_Oracle_10g.pdf
+alter system set events = '10943 trace name context level 2097152'; 
+
+○ declare
+ type typeRec1 is record (i integer);
+ type typeTbl1 is table of typeRec1;
+ type typeRec2 is record(t typeTbl1 := typeTbl1(), i integer := 2);
+ type typeTbl2 is table of typeRec2;
+ t2 typeTbl2 := typeTbl2();
+begin
+ t2.Extend;
+ -- t2(t2.FIRST).t.Extend;
+ DBMS_OUTPUT.PUT_LINE(t2(t2.FIRST).i);
+ t2.Extend;
+ t2(1).i := 4;
+ DBMS_OUTPUT.PUT_LINE(t2(t2.FIRST).i);
+end;
