@@ -1,0 +1,17 @@
+
+select * from v$parameter where name like '%open_cursor%'
+
+SELECT  max(a.value) as highest_open_cur, p.value as max_open_cur FROM v$sesstat a, v$statname b, v$parameter p WHERE  a.statistic# = b.statistic#  and b.name = 'opened cursors current' and p.name= 'open_cursors' group by p.value;
+select a.value, s.username, s.sid, s.serial# from v$sesstat a, v$statname b, v$session s where a.statistic# = b.statistic#  and s.sid=a.sid and b.name = 'opened cursors current' and s.username is not null;
+
+select a.value, s.username, s.sid, s.serial# from v$sesstat a, 
+v$statname b, v$session s 
+where a.statistic# = b.statistic# and s.sid=a.sid and b.name = 
+'opened cursors current' 
+and s.USERNAME='OC_CMEX' order by a.value desc; 
+
+select user_name, status, a.sql_text,a.sid ,a.sql_id
+from v$session b, 
+v$open_cursor a 
+where a.sid = b.sid and user_name='OC_CMEX' and ((a.sid=1458 ) ) 
+order by sql_text; 
