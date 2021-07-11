@@ -1,0 +1,39 @@
+--https://www.anbob.com/archives/6317.html
+
+fter Oracle 11g, the adrci warehouse management trace file was introduced. After 12c, all GI and DB were transferred to adrci. I still prefer to use it as a small tool. Today, a set of database installed by a friend uses adrci. View the log prompt No ADR base is set , Checked that the $ORACLE_BASE environment variable also exists, and the symbolic links directory is not used . For a temporary solution, of course, you can use SET BASE ADR_BASE DIR in adrci to manually specify ADR BASE. For frequently used tools, manual set is unbearable.
+
+The usual cause of this problem is that the adrci_dir.mif  file in the $ORACLE_HOME/log/diag directory is missing or damaged, and the permissions are incorrect. The ADR base directory is specified in this file. It can be solved by creating this file manually. Note cannot be created with vi because it will append line endings and newline characters. You can use the printf command tool.
+
+$ printf "%s" " <ADR base path> "> $ORACLE_HOME/log/diag/adrci_dir.mif
+
+case 1
+oracle@anbob2:/home/oracle> adrci
+ADRCI: Release 19.0.0.0.0-Production on Thu Jun 17 08:54:16 2021
+Copyright (c) 1982, 2019, Oracle and/or its affiliates. All rights reserved.
+
+No ADR base is set
+adrci> exit
+oracle@anbob2:/home/oracle> env|grep ORA
+ORACLE_PATH=/home/oracle/scifmation/scripts:/home/oracle/sdbo/scripts
+ORACLE_SID=orcl2
+ORACLE_BASE=/oracle/app/oracle
+ORACLE_HOME=/oracle/app/oracle/product/19c/db_1
+
+The result is that the log directory under ORACLE_HOME does not exist.
+
+Solution
+
+oracle@anbob2$ cd $ORACLE_HOME
+oracle@anbob2$ mkdir -p log/diag
+oracle@anbob2$ printf "%s" "/oracle/app/oracle"> $ORACLE_HOME/log/diag/adrci_dir.mif
+
+oracle@anbob2:/oracle/app/oracle/product/19c/db_1/log/diag> strings adrci_dir.mif 
+/oracle/app/oracle
+oracle@anbob2:/oracle/app/oracle/product/19c/db_1/log/diag> adrci
+
+ADRCI: Release 19.0.0.0.0-Production on Thu Jun 17 10:37:34 2021
+
+Copyright (c) 1982, 2019, Oracle and/or its affiliates. All rights reserved.
+
+ADR base = "/oracle/app/oracle"
+adrci> 
