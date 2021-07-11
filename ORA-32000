@@ -1,0 +1,60 @@
+Troubleshooting ORA-32000 when modify ASM spfile (oracle 19.11)
+--https://www.anbob.com/archives/6324.html
+
+Yesterday, when configuring ASM instance parameters, it was found that the parameters could not be modified.
+It prompted ora-32000, even if it is grid sysasm, the environment is newly installed oracle RAC,
+and the recently installed 19c 11RU is not a new feature of 19.11 RU, mainly the installation process There was a problem in AUTOupgrade, 
+which failed and was handled manually, and the cluster status was not updated. Simple record
+
+grid# sqlplus / as sysasm
+SQL>alter system set memory_target=1536m scope=spfile;
+ERROR at line 1:
+ORA-32000: write to SPFILE requested but SPFILE is not modifiable
+The cause of this problem is usually that the cluster or ASM instance processes the rolling patching phase of the rolling upgrade. During this phase, 
+the spfile parameter is not allowed to be modified, because different versions may not support the parameters or bring different effects after the upgrade.
+
+Check status
+
+Last login: Thu Jul 1 16:19:55 CST 2021
+[grid@anbob5 ~]$ crsctl query crs activeversion -f
+Oracle Clusterware active version on the cluster is [19.0.0.0.0]. The cluster upgrade state is [ ROLLING PATCH ]. The cluster active patch level is [ 724960844 ].
+[grid@anbob5 ~]$ 
+
+[grid@anbob6 ~]$ crsctl query crs activeversion -f
+Oracle Clusterware active version on the cluster is [19.0.0.0.0]. The cluster upgrade state is [ ROLLING PATCH ]. The cluster active patch level is [ 724960844 ].
+[grid@anbob6 ~]$ 
+
+SQL> SELECT SYS_CONTEXT('SYS_CLUSTER_PROPERTIES','CLUSTER_STATE') FROM DUAL;
+
+SYS_CONTEXT('SYS_CLUSTER_PROPERTIES','CLUSTER_STATE')
+-------------------------------------------------- ------------------------------
+In Rolling Patch
+Note:
+Note that it is currently in the ROLLING PATCH stage, and the version number is 724960844. Different nodes of the same CLUSTER are the same. 
+If you confirm that the current patch has been installed, you can manually end the ROLLING PATCH to normal mode.
+
+[root@anbob5 ~]# crsctl stop rollingpatch
+CRS-1161: The cluster was successfully patched to patch level [3331580692] .
+[root@anbob5 ~]# su-grid
+Last login: Thu Jul 1 16:52:26 CST 2021
+[grid@anbob5 ~]$ crsctl query crs activeversion -f
+Oracle Clusterware active version on the cluster is [19.0.0.0.0]. The cluster upgrade state is [NORMAL]. The cluster active patch level is [3331580692].
+[grid@anbob5 ~]$ sqlplus / as sysdba
+
+SQL*Plus: Release 19.0.0.0.0-Production on Thu Jul 1 16:53:45 2021
+Version 19.11.0.0.0
+Copyright (c) 1982, 2020, Oracle. All rights reserved.
+
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0-Production
+Version 19.11.0.0.0
+
+SQL> SELECT SYS_CONTEXT('SYS_CLUSTER_PROPERTIES','CLUSTER_STATE') FROM DUAL;
+
+SYS_CONTEXT('SYS_CLUSTER_PROPERTIES','CLUSTER_STATE')
+-------------------------------------------------- ------------------------------
+Normal
+
+The above operations can only be performed on one node. Normally, the upgrade is normal. 
+It is automatically judged in the script when the last node is AUTOUPGRADE and the Rolling Patch is ended.
+In addition, it is recommended to compare the size of the oracle binary file to do the upgrade.
